@@ -29,7 +29,7 @@ from sklearn.preprocessing import label_binarize
 from sklearn.multiclass import OneVsRestClassifier
 from scipy import interp
 
-CLASS_NUM = 4
+CLASS_NUM = 3
 
 def fileScan(directory):
     cut_data= list()
@@ -122,8 +122,9 @@ def genDict(directory):
 
 #Start here>>
 random.seed(1)
-
-for seed in range(1, 2):
+sum_roc=0.0
+sum_acc=0.0
+for seed in range(1, 11):
     print(seed)
     ratio = 0.3
     num_class = []
@@ -206,7 +207,7 @@ for seed in range(1, 2):
     folder_name3 = os.listdir("TestSet")
     i=0
     #print(TrainDict['ข้อแม้'])
-
+    '''
     for x in length:
         tmp = folder_name2[i]
         name_list2 = os.listdir("TrainingSet/"+folder_name2[i])
@@ -250,22 +251,23 @@ for seed in range(1, 2):
 
 
         i+=1
+    '''
 
-    test_x_panda = pd.DataFrame(test_x).to_csv('4mood_add/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_x.csv')
-    #test_x = pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_x.csv',sep=',').values[:,1:].tolist()
+    #test_x_panda = pd.DataFrame(test_x).to_csv('19_10_2559/3Mood_10Feature/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_x.csv')
+    test_x = pd.read_csv('19_10_2559/3Mood_10Feature/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_x.csv',sep=',').values[:,1:].tolist()
     #print(test_x)
-    train_x_panda = pd.DataFrame(training_x).to_csv('4mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_x.csv')
-    #training_x = pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_x.csv',sep=',').values[:,1:].tolist()
+    #train_x_panda = pd.DataFrame(training_x).to_csv('19_10_2559/3Mood_10Feature/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_x.csv')
+    training_x = pd.read_csv('19_10_2559/3Mood_10Feature/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_x.csv',sep=',').values[:,1:].tolist()
     #print(training_x)
-    test_y_panda = pd.DataFrame(test_y).to_csv('4mood_add/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_y.csv')
-    #test_y = list(np.reshape(pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_y.csv',sep=',').values[:,1:].tolist(),-1))
+    #test_y_panda = pd.DataFrame(test_y).to_csv('19_10_2559/3Mood_10Feature/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_y.csv')
+    test_y = list(np.reshape(pd.read_csv('19_10_2559/3Mood_10Feature/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_y.csv',sep=',').values[:,1:].tolist(),-1))
     #print(test_y)
-    train_y_panda = pd.DataFrame(training_y).to_csv('4mood_add/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_y.csv')
-    #training_y = list(np.reshape(pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_y.csv',sep=',').values[:,1:].tolist(),-1))
+    #train_y_panda = pd.DataFrame(training_y).to_csv('19_10_2559/3Mood_10Feature/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_y.csv')
+    training_y = list(np.reshape(pd.read_csv('19_10_2559/3Mood_10Feature/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_y.csv',sep=',').values[:,1:].tolist(),-1))
     #print(training_y)
 
-    #///
 
+    '''
     max_train_index = num_class_train.index(max(num_class_train))
     print(max_train_index)
     print(num_class_train)
@@ -286,7 +288,7 @@ for seed in range(1, 2):
             training_x.append(list(tmp[j%len(idx)]))
             training_y.append(i)
     print(training_x)
-
+    '''
     pd_traning_x = pd.DataFrame(training_x)
     pd_test_x = pd.DataFrame(test_x)
 
@@ -297,8 +299,12 @@ for seed in range(1, 2):
 
 
     for i in range(0,CLASS_NUM*2+2):
-        x_train_normalize[i] = (pd_traning_x[i]-x_train_mean[i])/x_train_std[i]
-        x_test_normalize[i] = (pd_test_x[i]-x_train_mean[i])/x_train_std[i]
+        if (x_train_std[i] != 0):
+            x_train_normalize[i] = (pd_traning_x[i] - x_train_mean[i]) / x_train_std[i]
+            x_test_normalize[i] = (pd_test_x[i] - x_train_mean[i]) / x_train_std[i]
+        else:
+            x_train_normalize[i] = 0
+            x_test_normalize[i] = 0
 
     #print(x_test_normalize)
 
@@ -319,10 +325,10 @@ for seed in range(1, 2):
         #print(h_layer)
         from sklearn.model_selection import StratifiedKFold
         skf = StratifiedKFold(n_splits=5)
-        skf.get_n_splits(x_train_normalize, train_y_trans)
+        #skf.get_n_splits(x_train_normalize, train_y_trans)
         #print(skf)
         roc_sum = 0
-        training_x = np.array(training_x)
+        training_x = np.array(x_train_normalize)
         training_y = np.array(training_y)
 
         for train_index, test_index in skf.split(training_x, training_y):
@@ -368,7 +374,8 @@ for seed in range(1, 2):
     print('Acc:',accuracy_score(test_y_trans, ib.transform(pd_res.tolist())))
     fpr, tpr,_ = roc_curve(np.reshape(test_y_trans,-1), np.reshape(ib.transform(pd_res.tolist()),-1))
     print('Roc:',auc(fpr, tpr))
-
+    sum_roc += auc(fpr, tpr)
+    sum_acc += accuracy_score(test_y_trans, ib.transform(pd_res.tolist()))
     print(confusion_matrix(test_y, pd_res.tolist()))
 
 
@@ -399,3 +406,7 @@ print(num_class_train)
 
 print(num_class_test)
 '''
+roc_mean=sum_roc/10.0
+acc_mean=sum_acc/10.0
+print('Sum Acc = ',acc_mean)
+print('Sum Roc = ',roc_mean)

@@ -31,6 +31,15 @@ from scipy import interp
 
 CLASS_NUM = 3
 
+prepolist = ['เกี่ยวกับ','เหนือ','ข้าม','หลังจาก','ต่อ','ระหว่าง','รอบ','เช่น','ที่','ก่อน','ข้างหลัง','ข้างล่าง','ภายใต้','ข้างๆ','ระหว่าง','เกิน','แต่','โดย','แม้จะมี','ลง','ในระหว่าง','ยกเว้น','สำหรับ','จาก','ใน','ข้างใน','เข้าไป','ใกล้','ถัดไป','ของ','เกี่ยวกับ','ตรงข้าม','ออก','ข้างนอก','เกิน','ต่อ','บวก','รอบ','ตั้งแต่','กว่า','ผ่าน','จนถึง','ไปยัง','สู่','ภายใต้','ไม่เหมือนกัน','จนกระทั่ง','ขึ้นไป','ผ่านทาง','ด้วย','ภายใน','ไม่มี','ไม่เกี่ยว','ตามที่','เนื่องจาก','ใกล้กับ','เนื่องมาจาก','ยกเว้นสำหรับ','ห่างไกลจาก','ภายในของ','แทนที่','ติดกับ','ภายนอกของ','ก่อนที่จะ','เท่าที่','ตลอดจน','นอกจาก','ต่อหน้า','แม้','ในนามของ','ด้านบนของ','นี้','นั้น','เหล่านี้','เหล่านั้น']
+
+
+def removekey(dict):
+    n_dict =dict
+    for pepword in prepolist:
+        del n_dict[pepword]
+    return n_dict
+
 def fileScan(directory):
     cut_data= list()
     name_list = os.listdir(directory)
@@ -120,8 +129,10 @@ def genDict(directory):
 
     return total_dict
 
+
+
 #Start here>>
-seed=10
+seed=1
 print(seed)
 ratio = 0.3
 num_class = []
@@ -182,6 +193,7 @@ for x in length:
     i = i + 1
 
 TrainDict = genDict("TrainingSet")
+TrainDict = removekey(TrainDict)
 
 Total = list()
 for i in range(CLASS_NUM*2):
@@ -192,7 +204,66 @@ for array in TrainDict:
         Total[ct] = Total[ct] + num
         ct+=1
 TrainDict['Total'] = Total
-#print(TrainDict['กก'])
+
+
+print(len(TrainDict))
+Word_list = []
+for word in TrainDict.keys():
+    Word_list.append(word)
+
+
+training_x = list()
+training_y = list()
+test_x = list()
+test_y = list()
+
+folder_name2 = os.listdir("TrainingSet")
+folder_name3 = os.listdir("TestSet")
+i=0
+#print(TrainDict['ข้อแม้'])
+
+for x in length:
+    tmp = folder_name2[i]
+    name_list2 = os.listdir("TrainingSet/"+folder_name2[i])
+
+    print(tmp)
+
+    for name in name_list2:
+        #print(name)
+        ls_text = segment(getSong("TrainingSet" + '/' + folder_name2[i] + '/'+name))
+        test = Counter(ls_text)
+        f = list()
+        for ii in range(len(Word_list)):
+            f.append(0)
+        for word in test.keys():
+            if word in Word_list:
+                f[Word_list.index(word)] += test[word]
+        training_x.append(f)
+        training_y.append(i)
+
+
+    name_list3 = os.listdir("TestSet/" + folder_name3[i])
+    for name in name_list3:
+        ls_text = segment(getSong("TestSet" + '/' + folder_name3[i] + '/'+name))
+        test = Counter(ls_text)
+        f = list()
+        for ii in range(len(Word_list)):
+            f.append(0)
+        for word in test.keys():
+            if word in Word_list:
+                f[Word_list.index(word)] += test[word]
+
+        test_x.append(f)
+        test_y.append(i)
+
+
+    i+=1
+
+
+
+
+#////////////////////////////////////////////////////////////////////////////////////////////////////////
+'''
 TrainDictFeature = genDictFeature(TrainDict)
 print("Gen dic features end....")
 training_x = list()
@@ -248,7 +319,8 @@ for x in length:
 
 
     i+=1
-
+'''
+'''
 test_x_panda = pd.DataFrame(test_x).to_csv('3mood_add/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_x.csv')
 #test_x = pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_x.csv',sep=',').values[:,1:].tolist()
 #print(test_x)
@@ -261,9 +333,9 @@ test_y_panda = pd.DataFrame(test_y).to_csv('3mood_add/seed'+str(seed)+'/'+'seed'
 train_y_panda = pd.DataFrame(training_y).to_csv('3mood_add/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_y.csv')
 #training_y = list(np.reshape(pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_y.csv',sep=',').values[:,1:].tolist(),-1))
 #print(training_y)
-
+'''
 #///
-
+'''
 max_train_index = num_class_train.index(max(num_class_train))
 print(max_train_index)
 print(num_class_train)
@@ -284,7 +356,7 @@ for i in p_dict.keys():
         training_x.append(list(tmp[j%len(idx)]))
         training_y.append(i)
 print(training_x)
-
+'''
 pd_traning_x = pd.DataFrame(training_x)
 pd_test_x = pd.DataFrame(test_x)
 
@@ -294,9 +366,13 @@ x_train_normalize = pd.DataFrame()
 x_test_normalize = pd.DataFrame()
 
 
-for i in range(0,CLASS_NUM*2+2):
-    x_train_normalize[i] = (pd_traning_x[i]-x_train_mean[i])/x_train_std[i]
-    x_test_normalize[i] = (pd_test_x[i]-x_train_mean[i])/x_train_std[i]
+for i in range(len(Word_list)):
+    if(x_train_std[i]!=0):
+        x_train_normalize[i] = (pd_traning_x[i]-x_train_mean[i])/x_train_std[i]
+        x_test_normalize[i] = (pd_test_x[i] - x_train_mean[i]) / x_train_std[i]
+    else:
+        x_train_normalize[i] = 0
+        x_test_normalize[i] = 0
 
 #print(x_test_normalize)
 
@@ -314,13 +390,13 @@ h_layer = 5
 auroc=[]
 
 for h_layer in range(1,51):
-    #print(h_layer)
+    print(h_layer)
     from sklearn.model_selection import StratifiedKFold
     skf = StratifiedKFold(n_splits=5)
     skf.get_n_splits(x_train_normalize, train_y_trans)
     #print(skf)
     roc_sum = 0
-    training_x = np.array(training_x)
+    training_x = np.array(x_train_normalize)
     training_y = np.array(training_y)
 
     for train_index, test_index in skf.split(training_x, training_y):
@@ -347,6 +423,9 @@ h_layer = int((auroc[np.argmax(auroc[:,0]),1]))
 print(h_layer)
 
 
+print(x_train_normalize)
+print(train_y_trans)
+
 #print(training_x)
 #print(test_x)
 #print(train_y_trans)
@@ -369,6 +448,8 @@ print('Roc:',auc(fpr, tpr))
 
 print(confusion_matrix(test_y, pd_res.tolist()))
 
+'''
+'''
 
 '''
 import csv

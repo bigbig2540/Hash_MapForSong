@@ -69,6 +69,11 @@ def findSong(directory):
         file.close()
         data = re.sub(r'[^ก-ูเ-์]', '', data)
         new_data = segment(data)
+
+        text = new_data
+        new_data.extend(ngram(text, 2))
+        new_data.extend(ngram(text, 3)) #tri
+
         new_data = set(new_data)
         for word in new_data:
             if((word in song_dict)==False):
@@ -102,6 +107,7 @@ def genDict(directory):
         s,num_song_tmp=findSong(directory+'/'+folder_name_list[x]+'/')
         num_song+=num_song_tmp
         s_list.append(s)
+    '''
     print(num_song)
     cut_data_list = []
     for x in range(0,CLASS_NUM):
@@ -119,22 +125,44 @@ def genDict(directory):
         for x in range(0,CLASS_NUM):
             if((word in s_list[x])==False):
                 s_list[x][word] =0
+'''
+    total=[]
+    for dic_tmp in s_list:
+        for word in dic_tmp.keys():
+            total.append(word)
 
+
+    for word in total:
+        for x in range(0, CLASS_NUM):
+            if ((word in s_list[x]) == False):
+                s_list[x][word] = 0
+    print(s_list)
     total_dict = dict()
 
     for word in total:
         ls = list()
-        #for i in range(CLASS_NUM):
-         #   ls.append(cut_data_list[i][word])
         for i in range(CLASS_NUM):
             ls.append(s_list[i][word])
-        total_dict[word] = math.log10(1.0*num_song/sum(ls))
+        if  (sum(ls) >5):
+            total_dict[word] = math.log10(1.0*num_song/sum(ls))
 
     return total_dict
+
+def ngram(input,n):
+    output = []
+    for i in range(len(input)-n+1):
+        tmp = ""
+        for x in range(n):
+            tmp += input[x+i]
+            #output.append(input[i:i+n])
+        output.append(tmp)
+    return output
+
 
 
 
 #Start here>>
+#print(ngram(['ฉัน','รัก','เธอ','นะ'],3))
 for seed in range(1,11):
     print(seed)
     ratio = 0.3
@@ -198,7 +226,8 @@ for seed in range(1,11):
 
 
     TrainDict = genDict("TrainingSet")
-    print(TrainDict['ฉัน'])
+    print(TrainDict.keys())
+    print(TrainDict['ของ'])
     TrainDict = removekey(TrainDict)
     '''
     Total = list()
@@ -216,7 +245,6 @@ for seed in range(1,11):
     Word_list = []
     for word in TrainDict.keys():
         Word_list.append(word)
-
 
     training_x = list()
     training_y = list()
@@ -237,13 +265,22 @@ for seed in range(1,11):
         for name in name_list2:
             #print(name)
             ls_text = segment(getSong("TrainingSet" + '/' + folder_name2[i] + '/'+name))
+            text = ls_text
+            ls_text.extend(ngram(text, 2))
+            ls_text.extend(ngram(text, 3)) #tri
+
             test = Counter(ls_text)
             f = list()
+            #print(f_bi)
+            #print(name)
+
             for ii in range(len(Word_list)):
                 f.append(0)
+
             for word in test.keys():
                 if word in Word_list:
                     f[Word_list.index(word)] += test[word]*TrainDict[word]
+
             training_x.append(f)
             training_y.append(i)
 
@@ -251,8 +288,14 @@ for seed in range(1,11):
         name_list3 = os.listdir("TestSet/" + folder_name3[i])
         for name in name_list3:
             ls_text = segment(getSong("TestSet" + '/' + folder_name3[i] + '/'+name))
+
+            text = ls_text
+            ls_text.extend(ngram(text, 2))
+            ls_text.extend(ngram(text, 3))  # tri
+
             test = Counter(ls_text)
             f = list()
+
             for ii in range(len(Word_list)):
                 f.append(0)
             for word in test.keys():
@@ -264,6 +307,12 @@ for seed in range(1,11):
 
 
         i+=1
+
+    #print(training_x)
+    #print(test_x)
+    print("finish")
+    print(len(training_x[0]))
+
 
 
 
@@ -393,7 +442,7 @@ for seed in range(1,11):
     #print(train_y_trans)
 
     #ssss
-    '''
+
     auroc=[]
 
     for h_layer in range(1,5):
@@ -456,10 +505,10 @@ for seed in range(1,11):
     print('Roc:',auc(fpr, tpr))
     matrix = np.array(confusion_matrix(test_y, pd_res.tolist()))
     print(confusion_matrix(test_y, pd_res.tolist()))
-    '''
 
-    '''
-    with open('workfile.txt', 'a') as f:
+
+
+    with open('workfile4.txt', 'a') as f:
         f.write('\nSeed:' + str(seed))
         f.write('\nAcc:'+ str(accuracy_score(test_y_trans, ib.transform(pd_res.tolist()))))
         f.write('\nRoc:' + str(auc(fpr, tpr)))
@@ -469,7 +518,7 @@ for seed in range(1,11):
             for j in range(CLASS_NUM):
                 f.write(str(matrix[i,j]) + ' ')
             f.write(']\n')
-    '''
+
 
 '''
 '''

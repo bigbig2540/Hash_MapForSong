@@ -18,6 +18,7 @@ from collections import Counter
 import numpy as np
 import pandas as pd
 import os
+from wordcut import Wordcut
 
 import matplotlib.pyplot as plt
 from itertools import cycle
