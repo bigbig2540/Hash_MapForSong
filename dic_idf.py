@@ -52,6 +52,7 @@ def fileScan(directory):
         cut_data.extend(segment(data))
     return cut_data
 
+
 def getSong(directory):
     file = open(directory,'r', encoding='utf-8')
     data = file.read()
@@ -134,322 +135,341 @@ def genDict(directory):
 
 
 #Start here>>
-seed=1
-print(seed)
-ratio = 0.3
-num_class = []
-num_class_test = []
-num_class_train = []
-index_class = []
-length = []
-sub_len = []
+for seed in range(1,11):
+    print(seed)
+    ratio = 0.3
+    num_class = []
+    num_class_test = []
+    num_class_train = []
+    index_class = []
+    length = []
+    sub_len = []
 
-folder_name = os.listdir("dataset")
-for f_name in folder_name:
-    tmp = os.listdir("dataset" + '/' + f_name)
-    num_class.append(len(tmp))
+    folder_name = os.listdir("dataset")
+    for f_name in folder_name:
+        tmp = os.listdir("dataset" + '/' + f_name)
+        num_class.append(len(tmp))
 
-for x in num_class:
-    num_class_test.append(math.floor(x*0.3))
+    for x in num_class:
+        num_class_test.append(math.floor(x*0.3))
 
-for x in range(0,CLASS_NUM):
-    num_class_train.append(num_class[x] - num_class_test[x])
+    for x in range(0,CLASS_NUM):
+        num_class_train.append(num_class[x] - num_class_test[x])
 
-for x in num_class:
-    sub_len=[]
-    sub_len.extend(range(1,x+1))
-    length.append(sub_len)
+    for x in num_class:
+        sub_len=[]
+        sub_len.extend(range(1,x+1))
+        length.append(sub_len)
 
-random.seed(seed)
+    random.seed(seed)
 
-for x in length:
-    random.shuffle(x)
-
-
-folder_name2 = os.listdir("TrainingSet")
-folder_name3 = os.listdir("TestSet")
+    for x in length:
+        random.shuffle(x)
 
 
-i=0
-for x in length:
-    for y in x:
+    folder_name2 = os.listdir("TrainingSet")
+    folder_name3 = os.listdir("TestSet")
+
+
+    i=0
+    for x in length:
+        for y in x:
+            tmp = folder_name2[i]
+            name_list2 = os.listdir("TrainingSet/"+folder_name2[i])
+            name_list3 = os.listdir("TestSet/" + folder_name3[i])
+            for name in name_list2:
+                os.remove("TrainingSet" + '/' + folder_name2[i] + '/'+name)
+            for name in name_list3:
+                os.remove("TestSet" + '/' + folder_name3[i] + '/'+name)
+        i = i + 1
+
+    i=0
+    for x in length:
+        h = 0
+        for y in x:
+            if h < num_class_train[i] :
+                shutil.copy("dataset" + '/' + folder_name2[i] + '/' + str(y)+".txt", "TrainingSet" + '/' + folder_name2[i] + '/')
+            else:
+                shutil.copy("dataset" + '/' + folder_name3[i] + '/' + str(y) + ".txt","TestSet" + '/' + folder_name3[i] + '/')
+            h=h+1
+
+        i = i + 1
+
+
+
+    TrainDict = genDict("TrainingSet")
+    print(TrainDict['ฉัน'])
+    TrainDict = removekey(TrainDict)
+    '''
+    Total = list()
+    for i in range(CLASS_NUM*2):
+        Total.append(0)
+    for array in TrainDict:
+        ct=0
+        for num in TrainDict[array]:
+            Total[ct] = Total[ct] + num
+            ct+=1
+    TrainDict['Total'] = Total
+    '''
+
+    print(len(TrainDict))
+    Word_list = []
+    for word in TrainDict.keys():
+        Word_list.append(word)
+
+
+    training_x = list()
+    training_y = list()
+    test_x = list()
+    test_y = list()
+
+    folder_name2 = os.listdir("TrainingSet")
+    folder_name3 = os.listdir("TestSet")
+    i=0
+
+
+    for x in length:
         tmp = folder_name2[i]
         name_list2 = os.listdir("TrainingSet/"+folder_name2[i])
-        name_list3 = os.listdir("TestSet/" + folder_name3[i])
+
+        print(tmp)
+
         for name in name_list2:
-            os.remove("TrainingSet" + '/' + folder_name2[i] + '/'+name)
+            #print(name)
+            ls_text = segment(getSong("TrainingSet" + '/' + folder_name2[i] + '/'+name))
+            test = Counter(ls_text)
+            f = list()
+            for ii in range(len(Word_list)):
+                f.append(0)
+            for word in test.keys():
+                if word in Word_list:
+                    f[Word_list.index(word)] += test[word]*TrainDict[word]
+            training_x.append(f)
+            training_y.append(i)
+
+
+        name_list3 = os.listdir("TestSet/" + folder_name3[i])
         for name in name_list3:
-            os.remove("TestSet" + '/' + folder_name3[i] + '/'+name)
-    i = i + 1
+            ls_text = segment(getSong("TestSet" + '/' + folder_name3[i] + '/'+name))
+            test = Counter(ls_text)
+            f = list()
+            for ii in range(len(Word_list)):
+                f.append(0)
+            for word in test.keys():
+                if word in Word_list:
+                    f[Word_list.index(word)] += test[word]*TrainDict[word]
 
-i=0
-for x in length:
-    h = 0
-    for y in x:
-        if h < num_class_train[i] :
-            shutil.copy("dataset" + '/' + folder_name2[i] + '/' + str(y)+".txt", "TrainingSet" + '/' + folder_name2[i] + '/')
+            test_x.append(f)
+            test_y.append(i)
+
+
+        i+=1
+
+
+
+
+    #////////////////////////////////////////////////////////////////////////////////////////////////////////
+    '''
+    TrainDictFeature = genDictFeature(TrainDict)
+    print("Gen dic features end....")
+    training_x = list()
+    training_y = list()
+    test_x = list()
+    test_y = list()
+    print(TrainDict['Total'])
+    folder_name2 = os.listdir("TrainingSet")
+    folder_name3 = os.listdir("TestSet")
+    i=0
+    #print(TrainDict['ข้อแม้'])
+
+    for x in length:
+        tmp = folder_name2[i]
+        name_list2 = os.listdir("TrainingSet/"+folder_name2[i])
+
+        for name in name_list2:
+            ls_text = segment(getSong("TrainingSet" + '/' + folder_name2[i] + '/'+name))
+            f9 = len(ls_text)
+            test = Counter(ls_text)
+            f10 = len(Counter(test))
+            f = list()
+            for ii in range(CLASS_NUM * 2):
+                f.append(0)
+            for word in test.keys():
+                if word in TrainDict.keys():
+                    for idx_f in range(0,CLASS_NUM*2):
+                        f[idx_f] += TrainDictFeature[word][idx_f]*test[word]
+            f.append(f9)
+            f.append(f10)
+            training_x.append(f)
+            training_y.append(i)
+
+
+        name_list3 = os.listdir("TestSet/" + folder_name3[i])
+        for name in name_list3:
+            ls_text = segment(getSong("TestSet" + '/' + folder_name3[i] + '/'+name))
+            f9 = len(ls_text)
+            test = Counter(ls_text)
+            f10 = len(Counter(test))
+            f = list()
+            for ii in range(CLASS_NUM * 2):
+                f.append(0)
+            for word in test.keys():
+                if word in TrainDict.keys():
+                   for idx_f in range(0,CLASS_NUM*2):
+                        f[idx_f] += TrainDictFeature[word][idx_f]*test[word]
+
+            f.append(f9)
+            f.append(f10)
+            test_x.append(f)
+            test_y.append(i)
+
+
+        i+=1
+    '''
+    '''
+    test_x_panda = pd.DataFrame(test_x).to_csv('3mood_add/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_x.csv')
+    #test_x = pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_x.csv',sep=',').values[:,1:].tolist()
+    #print(test_x)
+    train_x_panda = pd.DataFrame(training_x).to_csv('3mood_add/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_x.csv')
+    #training_x = pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_x.csv',sep=',').values[:,1:].tolist()
+    #print(training_x)
+    test_y_panda = pd.DataFrame(test_y).to_csv('3mood_add/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_y.csv')
+    #test_y = list(np.reshape(pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_y.csv',sep=',').values[:,1:].tolist(),-1))
+    #print(test_y)
+    train_y_panda = pd.DataFrame(training_y).to_csv('3mood_add/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_y.csv')
+    #training_y = list(np.reshape(pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_y.csv',sep=',').values[:,1:].tolist(),-1))
+    #print(training_y)
+    '''
+    #///
+    '''
+    max_train_index = num_class_train.index(max(num_class_train))
+    print(max_train_index)
+    print(num_class_train)
+    p_dict = dict()
+
+    for i in range(0,len(num_class_train)):
+        if i != max_train_index:
+            percent = num_class_train[max_train_index]- num_class_train[i]
+            p_dict[i] = percent
+    print(p_dict)
+
+
+    for i in p_dict.keys():
+        idx = (np.where(np.array(training_y) == i))
+        tmp = np.array(training_x)
+        tmp = tmp[idx]
+        for j in range(p_dict[i]):
+            training_x.append(list(tmp[j%len(idx)]))
+            training_y.append(i)
+    print(training_x)
+    '''
+    pd_traning_x = pd.DataFrame(training_x)
+    pd_test_x = pd.DataFrame(test_x)
+
+    x_train_mean = pd_traning_x.mean()
+    x_train_std = pd_traning_x.std()
+    x_train_normalize = pd.DataFrame()
+    x_test_normalize = pd.DataFrame()
+
+
+    for i in range(len(Word_list)):
+        if(x_train_std[i]!=0):
+            x_train_normalize[i] = (pd_traning_x[i]-x_train_mean[i])/x_train_std[i]
+            x_test_normalize[i] = (pd_test_x[i] - x_train_mean[i]) / x_train_std[i]
         else:
-            shutil.copy("dataset" + '/' + folder_name3[i] + '/' + str(y) + ".txt","TestSet" + '/' + folder_name3[i] + '/')
-        h=h+1
+            x_train_normalize[i] = 0
+            x_test_normalize[i] = 0
 
-    i = i + 1
+    #print(x_test_normalize)
 
-TrainDict = genDict("TrainingSet")
-print(TrainDict['ฉัน'])
-TrainDict = removekey(TrainDict)
-'''
-Total = list()
-for i in range(CLASS_NUM*2):
-    Total.append(0)
-for array in TrainDict:
-    ct=0
-    for num in TrainDict[array]:
-        Total[ct] = Total[ct] + num
-        ct+=1
-TrainDict['Total'] = Total
-'''
+    ib = preprocessing.LabelBinarizer()
+    ib.fit(test_y)
+    test_y_trans=ib.transform(test_y)
 
-print(len(TrainDict))
-Word_list = []
-for word in TrainDict.keys():
-    Word_list.append(word)
+    ib.fit(training_y)
+    train_y_trans=ib.transform(training_y)
+    h_layer = 5
+    #5fol-d
+    #print(train_y_trans)
 
+    #ssss
+    '''
+    auroc=[]
 
-training_x = list()
-training_y = list()
-test_x = list()
-test_y = list()
+    for h_layer in range(1,5):
+        print(int(math.pow(10,h_layer)/2))
+        from sklearn.model_selection import StratifiedKFold
+        skf = StratifiedKFold(n_splits=5)
+        skf.get_n_splits(x_train_normalize, train_y_trans)
+        #print(skf)
+        roc_sum = 0
+        training_x = np.array(x_train_normalize)
+        training_y = np.array(training_y)
 
-folder_name2 = os.listdir("TrainingSet")
-folder_name3 = os.listdir("TestSet")
-i=0
-
-
-for x in length:
-    tmp = folder_name2[i]
-    name_list2 = os.listdir("TrainingSet/"+folder_name2[i])
-
-    print(tmp)
-
-    for name in name_list2:
-        #print(name)
-        ls_text = segment(getSong("TrainingSet" + '/' + folder_name2[i] + '/'+name))
-        test = Counter(ls_text)
-        f = list()
-        for ii in range(len(Word_list)):
-            f.append(0)
-        for word in test.keys():
-            if word in Word_list:
-                f[Word_list.index(word)] += test[word]*TrainDict[word]
-        training_x.append(f)
-        training_y.append(i)
+        for train_index, test_index in skf.split(training_x, training_y):
+            #print("TRAIN:", train_index, "TEST:", test_index)
+            X_train, X_test = training_x[train_index], training_x[test_index]
+            y_train, y_test = training_y[train_index], training_y[test_index]
+            clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=int(math.pow(10,h_layer)/2), random_state=1,max_iter=500)
+            clf.fit(X_train, y_train)
+            res = clf.predict_proba(X_test)
+            pd_res = pd.DataFrame(res).idxmax(axis=1)
 
 
-    name_list3 = os.listdir("TestSet/" + folder_name3[i])
-    for name in name_list3:
-        ls_text = segment(getSong("TestSet" + '/' + folder_name3[i] + '/'+name))
-        test = Counter(ls_text)
-        f = list()
-        for ii in range(len(Word_list)):
-            f.append(0)
-        for word in test.keys():
-            if word in Word_list:
-                f[Word_list.index(word)] += test[word]*TrainDict[word]
+            #print ("test_y",len(np.reshape(ib.transform(y_test),-1)))
+            #print("pred_y",len(np.reshape(ib.transform(pd_res.tolist()),-1)))
 
-        test_x.append(f)
-        test_y.append(i)
+            fpr, tpr,_ = roc_curve(np.reshape(ib.transform(y_test),-1), np.reshape(ib.transform(pd_res.tolist()),-1))
+            roc_auc = auc(fpr, tpr)
+            roc_sum += roc_auc
+        auroc.append([roc_sum*1.0/5, int(math.pow(10,h_layer)/2)])
 
 
-    i+=1
+    auroc = np.array(auroc)
+    h_layer = int(np.argmax(auroc[:,0]))+1
+    print(auroc)
+    print(int(math.pow(10,h_layer)/2))
 
 
 
+    #print(x_train_normalize)
+    #print(train_y_trans)
 
-#////////////////////////////////////////////////////////////////////////////////////////////////////////
-'''
-TrainDictFeature = genDictFeature(TrainDict)
-print("Gen dic features end....")
-training_x = list()
-training_y = list()
-test_x = list()
-test_y = list()
-print(TrainDict['Total'])
-folder_name2 = os.listdir("TrainingSet")
-folder_name3 = os.listdir("TestSet")
-i=0
-#print(TrainDict['ข้อแม้'])
-
-for x in length:
-    tmp = folder_name2[i]
-    name_list2 = os.listdir("TrainingSet/"+folder_name2[i])
-
-    for name in name_list2:
-        ls_text = segment(getSong("TrainingSet" + '/' + folder_name2[i] + '/'+name))
-        f9 = len(ls_text)
-        test = Counter(ls_text)
-        f10 = len(Counter(test))
-        f = list()
-        for ii in range(CLASS_NUM * 2):
-            f.append(0)
-        for word in test.keys():
-            if word in TrainDict.keys():
-                for idx_f in range(0,CLASS_NUM*2):
-                    f[idx_f] += TrainDictFeature[word][idx_f]*test[word]
-        f.append(f9)
-        f.append(f10)
-        training_x.append(f)
-        training_y.append(i)
+    #print(training_x)
+    #print(test_x)
+    #print(train_y_trans)
+    #print(x_train_normalize)
+    clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=int(math.pow(10,h_layer)/2), random_state=1,max_iter=500)
+    clf.fit(x_train_normalize,train_y_trans)
+    res = clf.predict_proba(x_test_normalize)
 
 
-    name_list3 = os.listdir("TestSet/" + folder_name3[i])
-    for name in name_list3:
-        ls_text = segment(getSong("TestSet" + '/' + folder_name3[i] + '/'+name))
-        f9 = len(ls_text)
-        test = Counter(ls_text)
-        f10 = len(Counter(test))
-        f = list()
-        for ii in range(CLASS_NUM * 2):
-            f.append(0)
-        for word in test.keys():
-            if word in TrainDict.keys():
-               for idx_f in range(0,CLASS_NUM*2):
-                    f[idx_f] += TrainDictFeature[word][idx_f]*test[word]
-
-        f.append(f9)
-        f.append(f10)
-        test_x.append(f)
-        test_y.append(i)
+    pd.DataFrame(res).to_csv('res.csv')
+    #print(clf.out_activation_)
+    pd_res = pd.DataFrame(res).idxmax(axis=1)
 
 
-    i+=1
-'''
-'''
-test_x_panda = pd.DataFrame(test_x).to_csv('3mood_add/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_x.csv')
-#test_x = pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_x.csv',sep=',').values[:,1:].tolist()
-#print(test_x)
-train_x_panda = pd.DataFrame(training_x).to_csv('3mood_add/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_x.csv')
-#training_x = pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_x.csv',sep=',').values[:,1:].tolist()
-#print(training_x)
-test_y_panda = pd.DataFrame(test_y).to_csv('3mood_add/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_y.csv')
-#test_y = list(np.reshape(pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_y.csv',sep=',').values[:,1:].tolist(),-1))
-#print(test_y)
-train_y_panda = pd.DataFrame(training_y).to_csv('3mood_add/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_y.csv')
-#training_y = list(np.reshape(pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_y.csv',sep=',').values[:,1:].tolist(),-1))
-#print(training_y)
-'''
-#///
-'''
-max_train_index = num_class_train.index(max(num_class_train))
-print(max_train_index)
-print(num_class_train)
-p_dict = dict()
+    #print(ib.transform(pd_res.tolist()))
 
-for i in range(0,len(num_class_train)):
-    if i != max_train_index:
-        percent = num_class_train[max_train_index]- num_class_train[i]
-        p_dict[i] = percent
-print(p_dict)
+    print('Acc:',accuracy_score(test_y_trans, ib.transform(pd_res.tolist())))
+    fpr, tpr,_ = roc_curve(np.reshape(test_y_trans,-1), np.reshape(ib.transform(pd_res.tolist()),-1))
+    print('Roc:',auc(fpr, tpr))
+    matrix = np.array(confusion_matrix(test_y, pd_res.tolist()))
+    print(confusion_matrix(test_y, pd_res.tolist()))
+    '''
 
-
-for i in p_dict.keys():
-    idx = (np.where(np.array(training_y) == i))
-    tmp = np.array(training_x)
-    tmp = tmp[idx]
-    for j in range(p_dict[i]):
-        training_x.append(list(tmp[j%len(idx)]))
-        training_y.append(i)
-print(training_x)
-'''
-pd_traning_x = pd.DataFrame(training_x)
-pd_test_x = pd.DataFrame(test_x)
-
-x_train_mean = pd_traning_x.mean()
-x_train_std = pd_traning_x.std()
-x_train_normalize = pd.DataFrame()
-x_test_normalize = pd.DataFrame()
-
-
-for i in range(len(Word_list)):
-    if(x_train_std[i]!=0):
-        x_train_normalize[i] = (pd_traning_x[i]-x_train_mean[i])/x_train_std[i]
-        x_test_normalize[i] = (pd_test_x[i] - x_train_mean[i]) / x_train_std[i]
-    else:
-        x_train_normalize[i] = 0
-        x_test_normalize[i] = 0
-
-#print(x_test_normalize)
-
-ib = preprocessing.LabelBinarizer()
-ib.fit(test_y)
-test_y_trans=ib.transform(test_y)
-
-ib.fit(training_y)
-train_y_trans=ib.transform(training_y)
-h_layer = 5
-#5fol-d
-#print(train_y_trans)
-
-
-auroc=[]
-
-for h_layer in range(1,5):
-    print(int(math.pow(10,h_layer)))
-    from sklearn.model_selection import StratifiedKFold
-    skf = StratifiedKFold(n_splits=5)
-    skf.get_n_splits(x_train_normalize, train_y_trans)
-    #print(skf)
-    roc_sum = 0
-    training_x = np.array(x_train_normalize)
-    training_y = np.array(training_y)
-
-    for train_index, test_index in skf.split(training_x, training_y):
-        #print("TRAIN:", train_index, "TEST:", test_index)
-        X_train, X_test = training_x[train_index], training_x[test_index]
-        y_train, y_test = training_y[train_index], training_y[test_index]
-        clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=int(math.pow(10,h_layer)), random_state=1,max_iter=500)
-        clf.fit(X_train, y_train)
-        res = clf.predict_proba(X_test)
-        pd_res = pd.DataFrame(res).idxmax(axis=1)
-
-
-        #print ("test_y",len(np.reshape(ib.transform(y_test),-1)))
-        #print("pred_y",len(np.reshape(ib.transform(pd_res.tolist()),-1)))
-
-        fpr, tpr,_ = roc_curve(np.reshape(ib.transform(y_test),-1), np.reshape(ib.transform(pd_res.tolist()),-1))
-        roc_auc = auc(fpr, tpr)
-        roc_sum += roc_auc
-    auroc.append([roc_sum*1.0/5, int(math.pow(10,h_layer))])
-
-
-auroc = np.array(auroc)
-h_layer = int(np.argmax(auroc[:,0]))+1
-print(int(math.pow(10,h_layer)))
-
-
-print(x_train_normalize)
-print(train_y_trans)
-
-#print(training_x)
-#print(test_x)
-#print(train_y_trans)
-#print(x_train_normalize)
-clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=int(math.pow(10,h_layer)), random_state=1,max_iter=500)
-clf.fit(x_train_normalize,train_y_trans)
-res = clf.predict_proba(x_test_normalize)
-
-
-pd.DataFrame(res).to_csv('res.csv')
-#print(clf.out_activation_)
-pd_res = pd.DataFrame(res).idxmax(axis=1)
-
-
-#print(ib.transform(pd_res.tolist()))
-
-print('Acc:',accuracy_score(test_y_trans, ib.transform(pd_res.tolist())))
-fpr, tpr,_ = roc_curve(np.reshape(test_y_trans,-1), np.reshape(ib.transform(pd_res.tolist()),-1))
-print('Roc:',auc(fpr, tpr))
-
-print(confusion_matrix(test_y, pd_res.tolist()))
+    '''
+    with open('workfile.txt', 'a') as f:
+        f.write('\nSeed:' + str(seed))
+        f.write('\nAcc:'+ str(accuracy_score(test_y_trans, ib.transform(pd_res.tolist()))))
+        f.write('\nRoc:' + str(auc(fpr, tpr)))
+        f.write('\n')
+        for i in range(CLASS_NUM):
+            f.write('[')
+            for j in range(CLASS_NUM):
+                f.write(str(matrix[i,j]) + ' ')
+            f.write(']\n')
+    '''
 
 '''
 '''
