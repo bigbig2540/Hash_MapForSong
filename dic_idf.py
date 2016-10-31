@@ -32,7 +32,7 @@ from scipy import interp
 CLASS_NUM = 3
 file = open('preposition.txt','r', encoding='utf-8')
 pep = file.read().split(' ')
-print(pep)
+#print(pep)
 
 def removekey(dict):
     n_dict =dict
@@ -70,9 +70,12 @@ def findSong(directory):
         data = re.sub(r'[^ก-ูเ-์]', '', data)
         new_data = segment(data)
 
-        text = new_data
-        new_data.extend(ngram(text, 2))
+        text = list(new_data)
+
+
         new_data.extend(ngram(text, 3)) #tri
+        new_data.extend(ngram(text, 2))
+       # print(ngram(text, 3))
 
         new_data = set(new_data)
         for word in new_data:
@@ -102,11 +105,16 @@ def genDictFeature(TrainDict):
 def genDict(directory):
     s_list=[]
     folder_name_list = os.listdir(directory)
+    each_num_song = []
     num_song=0
     for x in range(0,CLASS_NUM):
         s,num_song_tmp=findSong(directory+'/'+folder_name_list[x]+'/')
+        each_num_song.append(num_song_tmp)
         num_song+=num_song_tmp
         s_list.append(s)
+    entropy = 0
+    for x in range(0,CLASS_NUM):
+        entropy+= (1.0*each_num_song[x]/num_song)*math.log10(1.0*each_num_song[x]/num_song)
     '''
     print(num_song)
     cut_data_list = []
@@ -136,7 +144,7 @@ def genDict(directory):
         for x in range(0, CLASS_NUM):
             if ((word in s_list[x]) == False):
                 s_list[x][word] = 0
-    print(s_list)
+   # print(s_list)
     total_dict = dict()
 
     for word in total:
@@ -145,6 +153,58 @@ def genDict(directory):
             ls.append(s_list[i][word])
         if  (sum(ls) >5):
             total_dict[word] = math.log10(1.0*num_song/sum(ls))
+
+    return total_dict,entropy*-1
+
+
+def genDictOldVer(directory):
+    s_list = []
+    folder_name_list = os.listdir(directory)
+    num_song = 0
+
+    for x in range(0, CLASS_NUM):
+        s, num_song_tmp = findSong(directory + '/' + folder_name_list[x] + '/')
+        num_song += num_song_tmp
+        s_list.append(s)
+
+
+   # print(num_song)
+    cut_data_list = []
+    for x in range(0,CLASS_NUM):
+        cut_data = Counter(fileScan(directory+'/'+folder_name_list[x]+'/'))
+        cut_data_list.append(cut_data)
+    '''
+    total=[]
+    for data_list in cut_data_list:
+        total.extend(data_list)
+
+    total = set(total)
+
+    all_word = dict()
+    for word in total:
+        for x in range(0,CLASS_NUM):
+            if((word in s_list[x])==False):
+                s_list[x][word] =0
+'''
+    total = []
+    for dic_tmp in s_list:
+        for word in dic_tmp.keys():
+            total.append(word)
+
+    for word in total:
+        for x in range(0, CLASS_NUM):
+            if ((word in s_list[x]) == False):
+                s_list[x][word] = 0
+  #  print(s_list)
+    total_dict = dict()
+
+    for word in total:
+        ls = list()
+        for i in range(CLASS_NUM):
+            ls.append(cut_data_list[i][word])
+        for i in range(CLASS_NUM):
+            ls.append(s_list[i][word])
+        total_dict[word] = ls
 
     return total_dict
 
@@ -225,10 +285,52 @@ for seed in range(1,11):
 
 
 
-    TrainDict = genDict("TrainingSet")
-    print(TrainDict.keys())
-    print(TrainDict['ของ'])
+    TrainDict,Entropy = genDict("TrainingSet")
+    TrainDictVerOld = genDictOldVer("TrainingSet")
+    TrainDictFre=dict()
+    TrainDictIG = dict()
+    #print(TrainDictVerOld['เธอ'][2])
+
+
+    for word in TrainDictVerOld:
+        entropy_word = 0
+        sum_word=0
+        word_x = []
+        for x in range(CLASS_NUM,CLASS_NUM*2):
+            word_x.append(TrainDictVerOld[word][x])
+            sum_word += TrainDictVerOld[word][x]
+          #  print(word)
+          #  print(TrainDictVerOld[word][x])
+       # print(word_x)
+        for x in range(0,CLASS_NUM):
+            entropy_word+=(1.0*word_x[x]/sum_word)*math.log10(1.0*word_x[x]/sum_word+1e-9 )
+      #  print(entropy_word)
+        entropy_word = entropy_word* -1
+        TrainDictFre[word] = sum_word
+        if(Entropy-entropy_word < 0):
+            TrainDictIG[word] =0
+        else:
+            TrainDictIG[word] = Entropy-entropy_word
+    IG_list = []
+    for word in TrainDictIG:
+        if(TrainDictIG[word] <= 0):
+            pep.append(word)
+        elif(TrainDictFre[word] <= 1):
+            pep.append(word)
+       # IG_list.append(list([word,TrainDictFre[word],TrainDictIG[word]]))
+   # pd.DataFrame(IG_list).to_csv('Ig_list2.csv')
+   # print(TrainDictVerOld['รู้ว่าคงไม่'])
+    print('Entropy'+str(Entropy))
+
+   # print(TrainDictIG['รู้ว่าคงไม่'])
+   # print(TrainDict.keys())
+   # print(TrainDict['ของ'])
+    pep=list(set(pep))
     TrainDict = removekey(TrainDict)
+    Traindic_list = []
+    for word in TrainDict:
+        Traindic_list.append(list([word,TrainDictFre[word],TrainDictIG[word]]))
+    pd.DataFrame(Traindic_list).to_csv('TrainDictRemove.csv')
     '''
     Total = list()
     for i in range(CLASS_NUM*2):
@@ -265,10 +367,10 @@ for seed in range(1,11):
         for name in name_list2:
             #print(name)
             ls_text = segment(getSong("TrainingSet" + '/' + folder_name2[i] + '/'+name))
-            text = ls_text
+            text = list(ls_text)
             ls_text.extend(ngram(text, 2))
             ls_text.extend(ngram(text, 3)) #tri
-
+            #print((ngram(text, 3)))
             test = Counter(ls_text)
             f = list()
             #print(f_bi)
@@ -289,7 +391,7 @@ for seed in range(1,11):
         for name in name_list3:
             ls_text = segment(getSong("TestSet" + '/' + folder_name3[i] + '/'+name))
 
-            text = ls_text
+            text = list(ls_text)
             ls_text.extend(ngram(text, 2))
             ls_text.extend(ngram(text, 3))  # tri
 
@@ -376,16 +478,16 @@ for seed in range(1,11):
         i+=1
     '''
 
-    test_x_panda = pd.DataFrame(test_x).to_csv('test_x.csv')
+    test_x_panda = pd.DataFrame(test_x).to_csv('seed'+str(seed)+'test_x_tri_gram.csv')
     #test_x = pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_x.csv',sep=',').values[:,1:].tolist()
     #print(test_x)
-    train_x_panda = pd.DataFrame(training_x).to_csv('train_x.csv')
+    train_x_panda = pd.DataFrame(training_x).to_csv('seed'+str(seed)+'train_x_tri_gram.csv')
     #training_x = pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_x.csv',sep=',').values[:,1:].tolist()
     #print(training_x)
-    test_y_panda = pd.DataFrame(test_y).to_csv('test_y.csv')
+    test_y_panda = pd.DataFrame(test_y).to_csv('seed'+str(seed)+'test_y_tri_gram.csv')
     #test_y = list(np.reshape(pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_y.csv',sep=',').values[:,1:].tolist(),-1))
     #print(test_y)
-    train_y_panda = pd.DataFrame(training_y).to_csv('train_y.csv')
+    train_y_panda = pd.DataFrame(training_y).to_csv('seed'+str(seed)+'train_y_tri_gram.csv')
     #training_y = list(np.reshape(pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_y.csv',sep=',').values[:,1:].tolist(),-1))
     #print(training_y)
 

@@ -185,7 +185,8 @@ for seed in range(1, 11):
         i = i + 1
 
     TrainDict = genDict("TrainingSet")
-
+    print('เธอ')
+    print(TrainDict['เธอ'])
     Total = list()
     for i in range(CLASS_NUM*2):
         Total.append(0)
