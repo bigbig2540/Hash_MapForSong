@@ -330,7 +330,7 @@ for seed in range(1,11):
     Traindic_list = []
     for word in TrainDict:
         Traindic_list.append(list([word,TrainDictFre[word],TrainDictIG[word]]))
-    pd.DataFrame(Traindic_list).to_csv('TrainDictRemove.csv')
+    #pd.DataFrame(Traindic_list).to_csv('TrainDictRemove.csv')
     '''
     Total = list()
     for i in range(CLASS_NUM*2):
@@ -478,17 +478,17 @@ for seed in range(1,11):
         i+=1
     '''
 
-    test_x_panda = pd.DataFrame(test_x).to_csv('seed'+str(seed)+'test_x_tri_gram.csv')
-    #test_x = pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_x.csv',sep=',').values[:,1:].tolist()
+    test_x_panda = pd.DataFrame(test_x).to_csv('seed'+str(seed)+'test_x_tri_gramV2.csv')
+    #test_x = pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_x.csv',sep=',').values[1:,1:].tolist()
     #print(test_x)
-    train_x_panda = pd.DataFrame(training_x).to_csv('seed'+str(seed)+'train_x_tri_gram.csv')
-    #training_x = pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_x.csv',sep=',').values[:,1:].tolist()
+    train_x_panda = pd.DataFrame(training_x).to_csv('seed'+str(seed)+'train_x_tri_gramV2.csv')
+    #training_x = pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_x.csv',sep=',').values[1:,1:].tolist()
     #print(training_x)
-    test_y_panda = pd.DataFrame(test_y).to_csv('seed'+str(seed)+'test_y_tri_gram.csv')
-    #test_y = list(np.reshape(pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_y.csv',sep=',').values[:,1:].tolist(),-1))
+    test_y_panda = pd.DataFrame(test_y).to_csv('seed'+str(seed)+'test_y_tri_gramV2.csv')
+    #test_y = list(np.reshape(pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_test_y.csv',sep=',').values[1:,1:].tolist(),-1))
     #print(test_y)
-    train_y_panda = pd.DataFrame(training_y).to_csv('seed'+str(seed)+'train_y_tri_gram.csv')
-    #training_y = list(np.reshape(pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_y.csv',sep=',').values[:,1:].tolist(),-1))
+    train_y_panda = pd.DataFrame(training_y).to_csv('seed'+str(seed)+'train_y_tri_gramV2.csv')
+    #training_y = list(np.reshape(pd.read_csv(str(seed)+'mood/seed'+str(seed)+'/'+'seed'+str(seed)+'_train_y.csv',sep=',').values[1:,1:].tolist(),-1))
     #print(training_y)
 
     #///
