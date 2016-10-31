@@ -36,18 +36,14 @@ CLASS_NUM = 3
 #pep = file.read().split(' ')
 #print(pep)
 for seed in range(1,2):
-    #test_x_panda = pd.DataFrame(test_x).to_csv('test_x.csv')
-    test_x = pd.read_csv('seed'+str(seed)+'test_x_tri_gram.csv',sep=',').values[:,1:].tolist()
-    #print(test_x)
-    #train_x_panda = pd.DataFrame(training_x).to_csv('train_x.csv')
-    training_x = pd.read_csv('seed'+str(seed)+'train_x_tri_gram.csv',sep=',').values[:,1:].tolist()
-    #print(training_x)
-    #test_y_panda = pd.DataFrame(test_y).to_csv('test_y.csv')
-    test_y = list(np.reshape(pd.read_csv('seed'+str(seed)+'test_y_tri_gram.csv',sep=',').values[:,1:].tolist(),-1))
-    #print(test_y)
-    #train_y_panda = pd.DataFrame(training_y).to_csv('train_y.csv')
-    training_y = list(np.reshape(pd.read_csv('seed'+str(seed)+'train_y_tri_gram.csv',sep=',').values[:,1:].tolist(),-1))
-    #print(training_y)
+
+    test_x = pd.read_csv('seed'+str(seed)+'test_x_tri_gramV2.csv',sep=',').values[1:,1:].tolist()
+
+    training_x = pd.read_csv('seed'+str(seed)+'train_x_tri_gramV2.csv',sep=',').values[1:,1:].tolist()
+
+    test_y = list(np.reshape(pd.read_csv('seed'+str(seed)+'test_y_tri_gramV2.csv',sep=',').values[1:,1:].tolist(),-1))
+
+    training_y = list(np.reshape(pd.read_csv('seed'+str(seed)+'train_y_tri_gramV2.csv',sep=',').values[1:,1:].tolist(),-1))
 
 
     pd_traning_x = pd.DataFrame(training_x)
@@ -83,8 +79,6 @@ for seed in range(1,2):
 
     auroc=[]
 
-
-
     #nueron
 
     for h_layer in range(3,4):
@@ -106,7 +100,6 @@ for seed in range(1,2):
             res = clf.predict_proba(X_test)
             pd_res = pd.DataFrame(res).idxmax(axis=1)
 
-
             #print ("test_y",len(np.reshape(ib.transform(y_test),-1)))
             #print("pred_y",len(np.reshape(ib.transform(pd_res.tolist()),-1)))
 
@@ -116,8 +109,8 @@ for seed in range(1,2):
     auroc.append([roc_sum*1.0/5, int(math.pow(10,h_layer)/2)])
     print(h_layer)
 
-    print(x_train_normalize)
-    print(train_y_trans)
+    #print(x_train_normalize)
+    #print(train_y_trans)
 
     # print(training_x)
     # print(test_x)
@@ -127,7 +120,7 @@ for seed in range(1,2):
     clf.fit(x_train_normalize, train_y_trans)
     res = clf.predict_proba(x_test_normalize)
 
-    pd.DataFrame(res).to_csv('res.csv')
+    #pd.DataFrame(res).to_csv('res.csv')
     # print(clf.out_activation_)
     pd_res = pd.DataFrame(res).idxmax(axis=1)
 
